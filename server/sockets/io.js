@@ -53,6 +53,141 @@ module.exports =function(io){
                     black: players[games[code].black].username
                 });
             }
-        })
-    })
-}
+        });
+        //Event when a player shows that is ready to play
+        socket.on('playerReady',()=>{
+            const player = players[socket.id];
+            if(!player) return;
+
+            const game = games[player.gameCode];
+            if(!game) return;
+
+            console.log('Player ${player.username} is ready');
+
+            if(player.color === 'white'){
+                game.whiteReady = true;
+            }else if(player.color === 'black'){
+                game.blackReady = true;
+            }
+
+            //if both players are ready and the game is not started
+            if(game.whiteReady && game.blackReady && !game.gameStarted){
+                console.log('Game ${player.gameCode} starting');
+                game.gameStarted = true;
+                io.to(player.gameCode).emit('bothPlayersReady');
+
+                //Initialize the timer for each player
+                game.timer = setInterval(()=>{
+                    if(game.turn === 'white'){
+                        game.WhiteTime --;
+                    }else{
+                        game.BlackTime --;
+                    }
+
+                    //notify all players about the neew time
+                    io.to(player.gameCode).emit('timeUpdate',{
+                        white: game.WhiteTime,
+                        black: game.BlackTime
+                    });
+
+                    //verify if a player has no time
+                    if(game.whiteTime <= 0){
+                        clearInterval(game.timer);
+                        io.to(player.gameCode).emit('gameOverTime',{
+                            winnerUsername: players[game.black].username
+                        });
+                    }else if(game.blackTime <= 0){
+                        clearInterval(game.timer);
+                        io.to(player.gameCode).emit('gameOverTime',{
+                            winnerUsername: players[game.white].username
+                        });
+                    }
+                },1000);
+            }
+        });
+
+        //Event when a player make a move
+        socket.on('move',(data)=>{
+            const player = players[socket.id];
+            if(!player){
+                console.log('Move rejected: Player not found');
+                return;
+            }
+
+            const game = games[player.gameCode];
+            if(!game || !game.gameStarted){
+                console.log('Move rejected: Gmae not found or not started');
+                return;
+            }
+            //we verify if the tuen is the player's turn
+            if(game.turn !== player.color){
+                console.log('Move rejected: Not player\'s turn');
+                return;
+            }
+            console.log('Move from ${player.color} in game ${player.gameCode}: ${data.from} to ${data.to}');
+
+            //we change the turn
+            game.turn = game.turn === 'white' ? 'black' : 'white';
+
+            //we notify the move to all players
+            io.to(player.gameCode).emit('move',{
+                from: data.from,
+                to: data.to,
+                promotion: data.promotion,
+                color: player.color
+            });
+        });
+
+        //Event to manage chat messages
+        socket.on('chat',(message)=>{
+            const player = players[socket.id];
+            if(!player) return;
+            console.log('Chat message from ${player.username}; ${message}');
+
+            //we sent the message to all players in the game
+            io.to(player.gameCode).emit('chat',{
+                username: player.username,
+                message: message
+            });
+        });
+
+        //Event when a player gets disconnected
+        socket.on('disconnect',()=>{
+            const player = players[socket.id];
+            if(player){
+                console.log('Player ${player.username} disconnected from game ${player.gameCode');
+                const game = games[player.gameCode];
+                if(game){
+                    if(game.timer){
+                        clearInterval(game.timer);
+                    }
+                    //we notify all that player gets disconnected
+                    io.to(player.gameCode).emit('gameOverDisconnected',{
+                        username:player.username
+                    });
+                }
+            }
+            //we delete the player from the player's list
+            delete players[socket.id];
+        });
+        //Event when a player makes checkmate
+        socket.on('checkmate',(data)=>{
+            const player = players[socket.id];
+            if(!player) return;
+
+            const game = games[player.gameCode];
+            if(!game) return;
+
+            if(game.timer){
+                clearInterval(game.timer);
+            }
+
+            //we notify all player that game end
+            io.to(player.gmaeCode).emit('gameOver',{
+                reason: 'checkmate',
+                winner: data.winner,
+                winnerUsername: players[data.winner==='white' ? game.white : game.black].username
+            });
+        });
+    });
+};
