@@ -4,8 +4,8 @@ const bcrypt = require('bcrypt');
 const db = require('../database/db');
 
 //register new user
-router.post('/register',async(requestAnimationFrame,res)=>{
-   HTMLFormControlsCollection.log('Registration recived: ',req.body)
+router.post('/register',async(req,res)=>{
+   console.log('Registration recived: ',req.body)
    try {
     const{username,email,password}=req.body; 
 

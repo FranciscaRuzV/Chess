@@ -14,10 +14,10 @@ console.log('Configuracion de DB:',{
     port: dbConfig.port
 });
 
-const Pool = new Pool(dbConfig);
+const pool = new Pool(dbConfig);
 
 //Test the initial connection
-Pool.connect((err,client, release)=>{
+pool.connect((err,client, release)=>{
     if(err){
         console.error('Error al conectar a PostgreSQL: ',err);
         return;
@@ -28,5 +28,5 @@ Pool.connect((err,client, release)=>{
 });
 
 module.exports = {
-    query: (text,params)=> Pool.query(text,params),pool
+    query: (text,params)=> pool.query(text,params),pool
 }

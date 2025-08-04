@@ -18,4 +18,4 @@ const setUserData = async (req,res,next)=>{
     next();
 };
 
-modeule.exports= {requireAuth,setUserData};
+module.exports= {requireAuth,setUserData};

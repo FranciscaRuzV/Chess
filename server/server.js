@@ -53,7 +53,7 @@ app.set('views',path.join(__dirname,'../front/views'));
 app.set('view engine','html');
 app.engine('html',require('express-handlebars').engine({
     extname: 'html',
-    defaultLayout: 'false',
+    defaultLayout: false,
     helpers: {
         json: function(context){
             return JSON.stringify(context);
@@ -62,6 +62,8 @@ app.engine('html',require('express-handlebars').engine({
 }));
 
 //public routes
+app.use('/auth',authRoutes);
+
 app.get('/login',(req,res)=>{
     if(req.session.userId){
         return res.redirect('/');
@@ -69,7 +71,7 @@ app.get('/login',(req,res)=>{
     res.render('login');
 });
 
-app.get('register',(req,res)=>{
+app.get('/register',(req,res)=>{
     if(req.session.userId){
         return res.redirect('/');
     }
@@ -98,6 +100,6 @@ app.use((err,req,res,next)=>{
 
 // Port Settings and server start
 const PORT = process.env.PORT || 3000;
-http.listen(PORT,()=>{
+server.listen(PORT,()=>{
     console.log(`Server running on port ${PORT}`);
 });

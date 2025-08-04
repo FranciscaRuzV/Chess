@@ -9,7 +9,7 @@ module.exports =function(io){
         //event when a player tries to join a  game
         socket.on('joinGame',(data)=>{
             const { code,color,timeControl, username } = data;
-            console.log('Player ${username} joining game ${code} as ${colo}');
+            console.log(`Player ${username} joining game ${code} as ${color}`);
 
             //if the game does not exist, create it with initial values
             if(!games[code]){
@@ -28,7 +28,7 @@ module.exports =function(io){
                 }
             };
             //save the information about the player in the players object
-            players[socket.io] = {
+            players[socket.id] = {
                 username: username,
                 gameCode: code,
                 color: color
@@ -45,8 +45,8 @@ module.exports =function(io){
             }
 
             //if both players are connected we notify everone in the game room
-            if(games[code].white && game[code].black){
-                console.log('Both players are connected in game ${code}');
+            if(games[code].white && games[code].black){
+                console.log(`Both players are connected in game ${code}`);
 
                 io.to(code).emit('playersConnected',{
                     white: players[games[code].white].username,
@@ -62,7 +62,7 @@ module.exports =function(io){
             const game = games[player.gameCode];
             if(!game) return;
 
-            console.log('Player ${player.username} is ready');
+            console.log(`Player ${player.username} is ready`);
 
             if(player.color === 'white'){
                 game.whiteReady = true;
@@ -72,7 +72,7 @@ module.exports =function(io){
 
             //if both players are ready and the game is not started
             if(game.whiteReady && game.blackReady && !game.gameStarted){
-                console.log('Game ${player.gameCode} starting');
+                console.log(`Game ${player.gameCode} starting`);
                 game.gameStarted = true;
                 io.to(player.gameCode).emit('bothPlayersReady');
 
@@ -116,7 +116,7 @@ module.exports =function(io){
 
             const game = games[player.gameCode];
             if(!game || !game.gameStarted){
-                console.log('Move rejected: Gmae not found or not started');
+                console.log('Move rejected: Game not found or not started');
                 return;
             }
             //we verify if the tuen is the player's turn
@@ -183,7 +183,7 @@ module.exports =function(io){
             }
 
             //we notify all player that game end
-            io.to(player.gmaeCode).emit('gameOver',{
+            io.to(player.gameCode).emit('gameOver',{
                 reason: 'checkmate',
                 winner: data.winner,
                 winnerUsername: players[data.winner==='white' ? game.white : game.black].username
